@@ -1,0 +1,27 @@
+syntax = "proto3";
+package v1;
+
+message CustomerDetails{
+	string api = 1;
+	string id = 2;
+	string name = 3;
+	string email = 4;
+	string address = 5;
+	string phone = 6;
+}
+
+message CustomerRequest{
+	string api = 1;
+	string id = 2;
+}
+
+message Acknowledgement{
+	string api = 1;
+	string id = 2;
+}
+
+// Service to manage Customer tasks
+service CustomerService {
+	rpc GetCustomer(CustomerRequest) returns (CustomerDetails){}
+	rpc CreateCustomer(CustomerDetails) returns (Acknowledgement){}
+}
