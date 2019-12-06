@@ -1,0 +1,26 @@
+version: '3'
+services:
+    customer:
+        build: customer/
+        environment:
+            - PORT_NUM=5100
+        ports:
+            - "5100"
+    restserver:
+        build: restserver/
+        environment:
+            - PORT_NUM=80
+            - CustomerURI=customer:5100
+        ports:
+            - "80:80"
+        depends_on:
+            - customer
+    # readarticle:
+    #     build: readarticles/
+    #     environment:
+    #         - PORT_NUM=5200
+    #     ports:
+    #         - "5200"
+    #     depends_on:
+    #         - articledb
+    #         - rabbitmq-server
