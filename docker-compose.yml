@@ -15,12 +15,12 @@ services:
             - "80:80"
         depends_on:
             - customer
-    # readarticle:
-    #     build: readarticles/
-    #     environment:
-    #         - PORT_NUM=5200
-    #     ports:
-    #         - "5200"
-    #     depends_on:
-    #         - articledb
-    #         - rabbitmq-server
+            - notify
+    notify:
+        build: notify/
+        environment:
+            - PORT_NUM=5200
+        ports:
+            - "5200"
+        env_file:
+            - ./notify/internal/externalProviders.env
