@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/render"
 	cgrpc "github.com/shanehowearth/bcg/customer/integration/grpc/client/v1"
+	ngrpc "github.com/shanehowearth/bcg/notify/integration/grpc/client/v1"
 )
 
 // Routes -
@@ -30,8 +31,11 @@ func Routes() *chi.Mux {
 	return router
 }
 
-// Read Customer instance
+// Customer instance
 var rc cgrpc.CustomerClient
+
+// Notify instance
+var notify ngrpc.NotifyClient
 
 func main() {
 	router := Routes()
@@ -46,8 +50,18 @@ func main() {
 	}
 
 	// Customer instance
-	customerURI := os.Getenv("CustomerURI")
+	customerURI, found := os.LookupEnv("CustomerURI")
+	if !found {
+		log.Fatal("No CustomerURI set, cannot continue")
+	}
 	rc = cgrpc.CustomerClient{Address: customerURI}
+
+	// Notify instance
+	notifyURI, found := os.LookupEnv("NotifyURI")
+	if !found {
+		log.Fatal("No NotifyURI set, cannot continue")
+	}
+	notify = ngrpc.NotifyClient{Address: notifyURI}
 
 	portNum := os.Getenv("PORT_NUM")
 	server := &http.Server{Addr: "0.0.0.0:" + portNum, Handler: router}
