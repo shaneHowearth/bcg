@@ -11,6 +11,7 @@ services:
         environment:
             - PORT_NUM=80
             - CustomerURI=customer:5100
+            - NotifyURI=notify:5200
         ports:
             - "80:80"
         depends_on:

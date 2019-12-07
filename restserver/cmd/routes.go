@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi"
 
 	cgrpcProto "github.com/shanehowearth/bcg/customer/integration/grpc/proto/v1"
+	notifyGrpc "github.com/shanehowearth/bcg/notify/integration/grpc/proto/v1"
 )
 
 func bcgRoutes(router *chi.Mux) {
@@ -23,6 +24,47 @@ func bcgRoutes(router *chi.Mux) {
 			r2.Get("/", GetCustomerByID)
 		})
 	})
+
+	// Notify related routes
+	router.Route("/notify", func(r chi.Router) {
+		r.Post("/", CreateNotification)
+	})
+}
+
+// CreateNotification -
+func CreateNotification(w http.ResponseWriter, req *http.Request) {
+	decoder := json.NewDecoder(req.Body)
+	var customer *notifyGrpc.CustomerDetails
+	err := decoder.Decode(&customer)
+	errStr := randSeq(6)
+	if err != nil {
+		log.Printf("%s An error occurred with CreateNotification, Error: %v", errStr, err)
+		respondWithError(w, http.StatusBadRequest, fmt.Sprintf("I am unable to use the information supplied, please try again. Alternatively you may contact Customer Support and quote this unique ID %s", errStr))
+		return
+	}
+	// Validate
+	// Name, Phone and Email are Mandatory
+	if customer.Name == "" || customer.Phone == "" || customer.Email == "" {
+		log.Printf("%s Name %s, or Phone %s, or Email %s not supplied", errStr, customer.Name, customer.Phone, customer.Email)
+		respondWithError(w, http.StatusBadRequest, fmt.Sprintf("Name, Phone, and Email are mandatory fields, please try again. Alternatively you may contact Customer Support and quote this unique ID %s", errStr))
+		return
+	}
+	// *Very* basic email validation
+	emailRegExp := "^([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9_\\-\\.]+)\\.([a-zA-Z]{2,5})$"
+	match, _ := regexp.MatchString(emailRegExp, customer.Email)
+	if !match {
+		log.Printf("%s Bad Email %s supplied", errStr, customer.Email)
+		respondWithError(w, http.StatusBadRequest, fmt.Sprintf("Email supplied is badly formatted, please try again. Alternatively you may contact Customer Support and quote this unique ID %s", errStr))
+
+		return
+	}
+	ack, err := notify.CreateNotification(customer)
+	if err != nil {
+		log.Printf("%s An error occurred with CreateNotification, Error: %v", errStr, err)
+		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("An internal server error has occured, please contact Customer Support and quote this unique ID %s", errStr))
+		return
+	}
+	respondWithJSON(w, http.StatusOK, ack)
 }
 
 // GetCustomerByID -
