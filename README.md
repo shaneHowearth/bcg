@@ -32,6 +32,15 @@ GET: /customer/<id>
 POST: /notify
 
 See swagger.yaml for full explanation of endpoints.
+### Example usage (Data is deliberately malformed in these examples)
+```
+# Create a Customer
+curl -v -plaintext -d '{"name": "Shane", "email": "RECEIVING@gmail", "address": "127.0.0.1", "phone": "+61NUMBER"}' localhost/customer
+# Get a customer
+curl -v -plaintext localhost/customer/1
+# Create a Notification
+curl -v -plaintext -d '{"name": "Shane", "email": "RECEIVING@gmail", "address": "127.0.0.1", "phone": "+61NUMBER"}' localhost/notify
+```
 
 ## Notes
 - For ease of development I have created a single container for the customer data path. Normally I would prefer to have a CQRS architecture where the Create Customer data path is a container that stores data in a (separately hosted) SQL database and uses a Message Queue to populate a NoSQL cache for the Query data path (Get Customer).
