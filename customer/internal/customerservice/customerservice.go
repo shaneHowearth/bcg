@@ -45,10 +45,8 @@ func (a *Server) CreateCustomer(ctx context.Context, det *grpcProto.CustomerDeta
 
 // GetCustomer -
 func (a *Server) GetCustomer(ctx context.Context, req *grpcProto.CustomerRequest) (*grpcProto.CustomerDetails, error) {
-	log.Printf("internal/customerservice GetCustomer %v", req)
 	id := req.GetId()
 	customer, _ := a.Cache.GetByID(id)
 
-	log.Printf("internal/customerservice customer: %#+v", customer)
 	return customer, nil
 }

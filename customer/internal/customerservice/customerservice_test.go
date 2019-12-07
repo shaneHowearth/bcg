@@ -17,27 +17,17 @@ type mockRepoCache struct{}
 
 var cacheCustomer *grpcProto.CustomerDetails
 var cacheFound bool
-/* var tagInfo *grpcProto.TagInfo */
 var populateErr error
 
 func (m *mockRepoCache) GetByID(id string) (*grpcProto.CustomerDetails, bool) {
 	return cacheCustomer, cacheFound
 }
-/* func (m *mockRepoCache) GetTagInfo(tag, date string) *grpcProto.TagInfo { return tagInfo } */
-func (m *mockRepoCache) Populate(*grpcProto.CustomerDetails) error          { return populateErr }
 
-type mockStorage struct{}
+var customerID string
+var cacheError error
 
-var fetchLatestRowsErr error
-var fetchOneError error
-var fetchOneCustomer *grpcProto.CustomerDetails
-
-func (ms *mockStorage) FetchLatestRows(n int) (as []*grpcProto.CustomerDetails, e error) {
-	return as, fetchLatestRowsErr
-}
-
-func (ms *mockStorage) FetchOne(id int) (a *grpcProto.CustomerDetails, e error) {
-	return fetchOneCustomer, fetchOneError
+func (m *mockRepoCache) Create(*grpcProto.CustomerDetails) (string, error) {
+	return customerID, cacheError
 }
 
 // Begin tests
@@ -75,43 +65,62 @@ func TestNewCustomerService(t *testing.T) {
 	}
 }
 
-func TestTagInfo(t *testing.T) {
+func TestCreateCustomer(t *testing.T) {
 	mockCache := &mockRepoCache{}
 
 	testcases := map[string]struct {
 		ctx      context.Context
-		input    *grpcProto.CustomerRequest
-		/* response *grpcProto.TagInfo */
+		input    *grpcProto.CustomerDetails
+		response string
+		err      bool
 	}{
 		"Happy Path": {
 			ctx:      context.Background(),
-			input:    &grpcProto.CustomerRequest{},
-			/* response: &grpcProto.TagInfo{}, */
+			input:    &grpcProto.CustomerDetails{Name: "Test", Email: "test@domain.com"},
+			response: "1",
+		},
+		"Missing Name": {
+			ctx:   context.Background(),
+			input: &grpcProto.CustomerDetails{Email: "test@domain.com"},
+			err:   true,
+		},
+		"Missing Email": {
+			ctx:   context.Background(),
+			input: &grpcProto.CustomerDetails{Name: "Test"},
+			err:   true,
+		},
+		"Malformed Email": {
+			ctx:   context.Background(),
+			input: &grpcProto.CustomerDetails{Name: "Test", Email: "testdomain.com"},
+			err:   true,
 		},
 	}
-	/* for name, tc := range testcases { */
-	/* 	t.Run(name, func(t *testing.T) { */
-	/* 		/1* tagInfo = tc.response *1/ */
-	/* 		/1* ss := SUT.NewCustomerService(mockCache) *1/ */
-	/* 		/1* output, err := ss.GetTagInfo(tc.ctx, tc.input) *1/ */
-            /* /1* output := "" *1/ */
-	/* 		/1* assert.Equal(t, tc.response, output, "Expected %v got %v", tc.response, output) *1/ */
-	/* 		/1* assert.Nil(t, err, "Not expecting an error") *1/ */
-	/* 	}) */
-	/* } */
+	for name, tc := range testcases {
+		t.Run(name, func(t *testing.T) {
+			customerID = tc.response
+			ss := SUT.NewCustomerService(mockCache)
+			output, err := ss.CreateCustomer(tc.ctx, tc.input)
+			assert.Equal(t, tc.response, output, "Expected %v got %v", tc.response, output)
+			if tc.err {
+
+				assert.NotNil(t, err, "Was expecting an error")
+			} else {
+				assert.Nil(t, err, "Not expecting an error")
+			}
+		})
+	}
 }
 
 func TestGetCustomer(t *testing.T) {
 	mockCache := &mockRepoCache{}
 
 	testcases := map[string]struct {
-		ctx             context.Context
-		input           *grpcProto.CustomerRequest
-		response        *grpcProto.CustomerDetails
-		fetchedCustomer *grpcProto.CustomerDetails
-		found           bool
-		errorReturned   bool
-		cacheErr        error
+		ctx           context.Context
+		input         *grpcProto.CustomerRequest
+		response      *grpcProto.CustomerDetails
+		found         bool
+		errorReturned bool
+		cacheErr      error
 	}{
 		"Happy Path": {
 			ctx:      context.Background(),
@@ -124,26 +133,6 @@ func TestGetCustomer(t *testing.T) {
 			input:    &grpcProto.CustomerRequest{Id: "1"},
 			response: &grpcProto.CustomerDetails{},
 		},
-		"No Customer in Cache, but one in DB": {
-			ctx:             context.Background(),
-			input:           &grpcProto.CustomerRequest{Id: "1"},
-			response:        &grpcProto.CustomerDetails{Id: "1"},
-			fetchedCustomer: &grpcProto.CustomerDetails{Id: "1"},
-		},
-		"Bad Id supplied": {
-			ctx:             context.Background(),
-			input:           &grpcProto.CustomerRequest{Id: "Bad"},
-			response:        &grpcProto.CustomerDetails{},
-			fetchedCustomer: &grpcProto.CustomerDetails{},
-			errorReturned:   true,
-		},
-		"Unable to populate cache": {
-			ctx:             context.Background(),
-			input:           &grpcProto.CustomerRequest{Id: "22"},
-			response:        &grpcProto.CustomerDetails{},
-			fetchedCustomer: &grpcProto.CustomerDetails{},
-			cacheErr:        fmt.Errorf("cache error"),
-		},
 	}
 	for name, tc := range testcases {
 		t.Run(name, func(t *testing.T) {
@@ -151,7 +140,6 @@ func TestGetCustomer(t *testing.T) {
 			ss := SUT.NewCustomerService(mockCache)
 			cacheCustomer = tc.response
 			cacheFound = tc.found
-			fetchOneCustomer = tc.fetchedCustomer
 			populateErr = tc.cacheErr
 
 			output, err := ss.GetCustomer(tc.ctx, tc.input)
