@@ -1,0 +1,130 @@
+swagger: "2.0"
+info:
+  description: "This is an example Customer server."
+  version: "1.0.0"
+  title: "Shane BCG`"
+  contact:
+    email: "shane@shanehowearth.com"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "localhost"
+tags:
+- name: "customer"
+  description: "Everything about your Customers"
+schemes:
+- "http"
+paths:
+  /customer:
+    post:
+      tags:
+      - "customer"
+      summary: "Add a new customer to the store"
+      description: ""
+      operationId: "createCustomer"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Customer object that needs to be added to the store"
+        required: true
+        schema:
+          $ref: "#/definitions/Customer"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Acknowledgement"
+        400:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+  /customer/{customerId}:
+    get:
+      tags:
+      - "customer"
+      summary: "Find customer by ID"
+      description: "Returns a single customer"
+      operationId: "getCustomerById"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "customerId"
+        in: "path"
+        description: "ID of customer to return"
+        required: true
+        type: "integer"
+        format: "int32"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Customer"
+        400:
+          description: "Invalid input"
+        404:
+          description: "Customer not found"
+        500:
+          description: "Internal server error"
+  /notify:
+    post:
+      tags:
+      - "notify"
+      summary: "Create notification"
+      operationId: "createNotification"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Created user object"
+        required: true
+        schema:
+          $ref: "#/definitions/NotifiedCustomer"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Acknowledgement"
+        400:
+          description: "Invalid information supplied"
+        500:
+          description: "Internal server error"
+definitions:
+  Acknowledgement:
+    type: "object"
+    properties:
+      id:
+        type: "string"
+  Customer:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      email:
+        type: "string"
+      phone:
+        type: "string"
+      address:
+        type: "string"
+    required:
+      - name
+      - email
+  NotifiedCustomer:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      email:
+        type: "string"
+      phone:
+        type: "string"
+      address:
+        type: "string"
+    required:
+      - name
+      - email
+      - phone
