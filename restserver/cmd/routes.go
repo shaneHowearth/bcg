@@ -73,7 +73,7 @@ func GetCustomerByID(w http.ResponseWriter, req *http.Request) {
 	// validate (id can only be int32 for now)
 	if _, err := strconv.Atoi(id); err != nil {
 		log.Printf("An invalid customer id was supplied, ID: %s Error: %v", id, err)
-		respondWithError(w, http.StatusInternalServerError, "Supplied Customer ID is an incorrect format")
+		respondWithError(w, http.StatusBadRequest, "Supplied Customer ID is an incorrect format")
 	}
 
 	customer, err := rc.GetCustomer(&cgrpcProto.CustomerRequest{Id: id})
@@ -82,6 +82,10 @@ func GetCustomerByID(w http.ResponseWriter, req *http.Request) {
 		log.Printf("%s An error occurred with GetCustomerByID, Error: %v", errStr, err)
 		// We don't want the user to know about the inner workings of the application
 		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("An internal server error has occured, please contact Customer Support and quote this unique ID %s", errStr))
+	}
+	if customer.Id == "" {
+
+		respondWithError(w, http.StatusNotFound, fmt.Sprintf(""))
 	}
 	respondWithJSON(w, http.StatusOK, customer)
 }
